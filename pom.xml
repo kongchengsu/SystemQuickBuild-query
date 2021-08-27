@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.5.3</version>
+        <relativePath/>
+    </parent>
+    <groupId>com.sukongcheng</groupId>
+    <artifactId>SystemQuickBuild-query</artifactId>
+    <version>1.0</version>
+    <packaging>jar</packaging>
+    <name>SystemQuickBuild-query</name>
+    <description>Demo project for Spring Boot</description>
+    <properties>
+        <java.version>1.8</java.version>
+    </properties>
+    <repositories>
+        <repository>
+            <id>SystemQuickBuild-util</id>
+            <name>The Maven Repository on Github</name>
+            <url>https://github.com/kongchengsu/SystemQuickBuild-util/tree/master/maven-repo/</url>
+        </repository>
+
+    </repositories>
+    <dependencies>
+        <dependency>
+            <groupId>com.sukongcheng</groupId>
+            <artifactId>SystemQuickBuild-util</artifactId>
+            <version>1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!--导入导出excel-->
+        <dependency>
+            <groupId>io.github.magic-core</groupId>
+            <artifactId>excel-boot</artifactId>
+            <version>2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+            <version>1.4.01</version>
+        </dependency>
+
+    </dependencies>
+
+
+</project>
