@@ -23,7 +23,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: com.sukongcheng:SystemQuickBuild-util:1.0" level="project" />
+    <orderEntry type="library" name="Maven: com.jtexplorer:SystemQuickBuild-util:1.0" level="project" />
     <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot-starter:2.5.3" level="project" />
     <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot:2.5.3" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-context:5.3.9" level="project" />
