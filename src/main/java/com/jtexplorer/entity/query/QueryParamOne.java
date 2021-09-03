@@ -76,7 +76,7 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
     /**
      * 导出时，将T类对象转为想要的类的对象的方法
      */
-    private QueryConvertConsumer convert;
+    private QueryConvertConsumer<T> convert;
     /**
      * 导出时，将查询出的T类对象的list进行处理的方法
      */
@@ -238,7 +238,7 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
                     }
 
                     @Override
-                    public Object convert(Object o) {
+                    public Object convert(T o) {
                         // 对象转化
                         if (getConvert() == null) {
                             return o;
