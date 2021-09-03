@@ -5,5 +5,7 @@ com\jtexplorer\entity\query\QueryParamOne$1.class
 com\jtexplorer\entity\query\QueryTypeEnum.class
 com\jtexplorer\entity\query\JoinExample.class
 com\jtexplorer\entity\query\QueryParam.class
+com\jtexplorer\entity\query\QueryBusinessLogicConsumer.class
 com\jtexplorer\entity\query\QueryConvertListConsumer.class
 com\jtexplorer\entity\query\QueryParam$1.class
+com\jtexplorer\entity\query\OrderColumn.class

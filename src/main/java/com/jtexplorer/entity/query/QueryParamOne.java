@@ -10,10 +10,7 @@ import com.excel.poi.common.Constant;
 import com.excel.poi.function.ExportFunction;
 import com.jtexplorer.config.ParamStaticConfig;
 import com.jtexplorer.entity.enums.RequestEnum;
-import com.jtexplorer.util.FileUtil;
-import com.jtexplorer.util.JsonResult;
-import com.jtexplorer.util.StringUtil;
-import com.jtexplorer.util.TimeTools;
+import com.jtexplorer.util.*;
 import lombok.Data;
 import org.apache.ibatis.session.RowBounds;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,9 +21,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.text.ParseException;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * QueryParam class
@@ -87,6 +82,10 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
      */
     private QueryConvertListConsumer<T> convertList;
     /**
+     * 业务逻辑，QueryPage方法会调用
+     */
+    private QueryBusinessLogicConsumer BusinessLogic;
+    /**
      * 保存地址
      */
     private String savePath;
@@ -107,6 +106,48 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
      * 导入excel文件
      */
     File fileExcel;
+
+    private static List<String> sqlKey = new ArrayList<>();
+
+    static {
+        sqlKey.add("create ");
+        sqlKey.add("select ");
+        sqlKey.add("from ");
+        sqlKey.add("where ");
+        sqlKey.add("distinct ");
+        sqlKey.add("all ");
+        sqlKey.add("and ");
+        sqlKey.add("or ");
+        sqlKey.add("not ");
+        sqlKey.add(";");
+        sqlKey.add("insert ");
+        sqlKey.add("into ");
+        sqlKey.add("table ");
+        sqlKey.add("values ");
+        sqlKey.add("group ");
+        sqlKey.add("by ");
+        sqlKey.add("union ");
+        sqlKey.add("intersect ");
+        sqlKey.add("except ");
+        sqlKey.add("is ");
+        sqlKey.add("having ");
+        sqlKey.add("join ");
+        sqlKey.add("delete ");
+        sqlKey.add("update ");
+        sqlKey.add("drop ");
+        sqlKey.add("alter ");
+        sqlKey.add("user ");
+        sqlKey.add("password ");
+        sqlKey.add("SET ");
+        sqlKey.add("grant ");
+        sqlKey.add("privileges ");
+        sqlKey.add("identified ");
+        sqlKey.add("REVOKE ");
+        sqlKey.add("FLUSH ");
+    }
+
+    private Class<T> clazz = (Class<T>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[1];
+    private Class<Q> clazzQ = (Class<Q>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
 
 
     /**
@@ -152,13 +193,15 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
      * @return Page
      */
     public IPage<T> QueryPage(ServiceImpl service) {
+        if (getBusinessLogic() != null) {
+            getBusinessLogic().convert(this);
+        }
         // 拼装查询参数（属性query）
         buildExample();
         // 构建mybatisPlus的分页类对象
         IPage<T> page = getIPage();
         // 根据MyServiceImpl对象查询，该方法查询时，如果page为空，则不分页查询
-        page = service.page(page, getQuery());
-        return page;
+        return service.page(page, getQuery());
     }
 
     /**
@@ -220,11 +263,37 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
             }
         }
     }
+    public JsonResult QueryJsonResult(ServiceImpl service, Class clasz) {
+        JsonResult jsonResult = new JsonResult();
+        IPage<T> page = QueryPage(service,clasz);
+        if(verifyParamIsY(getIsExport())){
+            jsonResult.buildTrueNew();
+            jsonResult.setTip(getExcelReturnPath());
+        }else {
+            List records = EntityUtil.parentListToChildList(page.getRecords(), clasz);
+            if(ListUtil.isNotEmpty(records)){
+                jsonResult.buildTrueNew(page.getTotal(),records);
+            }else {
+                jsonResult.buildFalseNew(RequestEnum.REQUEST_ERROR_DATABASE_QUERY_NO_DATA);
+            }
+        }
+        return jsonResult;
+    }
+
+
+    public static boolean sqlKeyV(String item) {
+        for (String sqlKeyItem : sqlKey) {
+            if (item.toLowerCase(Locale.ENGLISH).contains(sqlKeyItem)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     /**
      * 生成排序条件
      */
-    public void buildOrderQuery(QueryWrapper<T> query) {
+    public void buildOrderQuery(QueryWrapper query) {
         if (StringUtil.isNotEmpty(getOrderItem())) {
             // 按照逗号 分开各排序列
             String[] orderItemStr = getOrderItem().split(",");
@@ -235,13 +304,45 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
                 if (items.length > 1) {
                     itemType = items[1];
                 }
-                if ("desc".equals(itemType)) {
-                    query.orderByDesc(items[0]);
-                } else {
-                    query.orderByAsc(items[0]);
+                items[0] = items[0].replace(" ", "");
+                if (sqlKeyV(items[0]) && !items[0].contains(" ")) {
+                    // 首先该列是否存在于原始类（数据表）中
+                    Field[] fields = clazz.getDeclaredFields();
+                    boolean have = false;
+                    for (Field field : fields) {
+                        String columnName = QueryTypeEnum.camelToUnderline(field.getName(), 1);
+                        if (buildOrderItem(query, items[0], columnName, itemType)) {
+                            have = true;
+                            break;
+                        }
+                    }
+                    if (!have) {
+                        // 原始类（数据表）中没有，从注解中找
+                        if (clazzQ.isAnnotationPresent(OrderColumn.class)) {
+                            OrderColumn joinExample = clazzQ.getDeclaredAnnotation(OrderColumn.class);
+                            String[] columnNames = joinExample.columnName();
+                            for (String columnName : columnNames) {
+                                if (buildOrderItem(query, items[0], columnName, itemType)) {
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
+    }
+
+    private boolean buildOrderItem(QueryWrapper query, String param, String columnName, String itemType) {
+        if (param.equals(columnName)) {
+            if ("desc".equals(itemType)) {
+                query.orderByDesc(columnName);
+            } else {
+                query.orderByAsc(columnName);
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -337,22 +438,17 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
         update = new UpdateWrapper<>();
         // 首先根据param将全部不为空的项，做成查询参数
         if (getParam() != null) {
-            Class<T> clazz = (Class<T>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[1];
             Field[] fields = clazz.getDeclaredFields();
             for (Field field : fields) {
                 QueryTypeEnum.EQ.buildQuery(field, getParam(), query, update);
             }
         }
         // 然后根据本身的JoinExample注解，将对应的项，做成查询参数
-        Class<Q> clazz = (Class<Q>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-        Field[] fields = clazz.getDeclaredFields();
+        Field[] fields = clazzQ.getDeclaredFields();
         for (Field field : fields) {
             if (field.isAnnotationPresent(JoinExample.class)) {
                 JoinExample joinExample = field.getDeclaredAnnotation(JoinExample.class);
                 String columnName = joinExample.columnName();
-                if (StringUtil.isEmpty(columnName)) {
-                    columnName = field.getName().replaceFirst(joinExample.queryType().getParamPrefix(), "");
-                }
                 joinExample.queryType().buildQuery(field, this, columnName, query, update);
             }
         }

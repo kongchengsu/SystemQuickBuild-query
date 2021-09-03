@@ -6,6 +6,7 @@ import com.jtexplorer.util.StringUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 
 public enum QueryTypeEnum {
     EQ((f, c, o, q, u) -> {
@@ -14,22 +15,22 @@ public enum QueryTypeEnum {
             q.eq(c, fieldValue);
             u.eq(c, fieldValue);
         }
-    },"isEq"),
+    }),
     LIKE((f, c, o, q, u) -> {
         Object fieldValue = getFieldValue(o, f);
         if (StringUtil.isNotEmpty(fieldValue)) {
             q.like(c, fieldValue);
             u.like(c, fieldValue);
         }
-    },"isLike"),
+    }),
     IN((f, c, o, q, u) -> {
-        Object fieldValue = getFieldValue(o, f);
+        Collection fieldValue = (Collection) getFieldValue(o, f);
         if (StringUtil.isNotEmpty(fieldValue)) {
             q.in(c, fieldValue);
             u.in(c, fieldValue);
         }
 
-    },"isIn"),
+    }),
     NOT_EQ((f, c, o, q, u) -> {
         Object fieldValue = getFieldValue(o, f);
         if (StringUtil.isNotEmpty(fieldValue)) {
@@ -37,38 +38,33 @@ public enum QueryTypeEnum {
             u.ne(c, fieldValue);
         }
 
-    },"isNotEq"),
+    }),
     NOT_IN((f, c, o, q, u) -> {
-        Object fieldValue = getFieldValue(o, f);
+        Collection fieldValue = (Collection) getFieldValue(o, f);
         if (StringUtil.isNotEmpty(fieldValue)) {
             q.notIn(c, fieldValue);
             u.notIn(c, fieldValue);
         }
-    },"isNotIn"),
+    }),
     GE((f, c, o, q, u) -> {
         Object fieldValue = getFieldValue(o, f);
         if (StringUtil.isNotEmpty(fieldValue)) {
             q.ge(c, fieldValue);
             u.ge(c, fieldValue);
         }
-    },"isGe"),
+    }),
     LE((f, c, o, q, u) -> {
         Object fieldValue = getFieldValue(o, f);
         if (StringUtil.isNotEmpty(fieldValue)) {
             q.le(c, fieldValue);
             u.le(c, fieldValue);
         }
-    },"isLe");
+    });
 
     private QueryTypeConsumer<Field, String, Object, QueryWrapper, UpdateWrapper> action;
-    private String paramPrefix;
-    public String getParamPrefix(){
-        return paramPrefix;
-    }
 
-    QueryTypeEnum(QueryTypeConsumer<Field, String, Object, QueryWrapper, UpdateWrapper> action,String paramPrefix) {
+    QueryTypeEnum(QueryTypeConsumer<Field, String, Object, QueryWrapper, UpdateWrapper> action) {
         this.action = action;
-        this.paramPrefix = paramPrefix;
     }
 
     private QueryTypeConsumer<Field, String, Object, QueryWrapper, UpdateWrapper> getAction() {
@@ -97,7 +93,7 @@ public enum QueryTypeEnum {
     private static final char UNDERLINE = '_';
 
     /*驼峰转下划线*/
-    private static String camelToUnderline(String param, Integer charType) {
+    public static String camelToUnderline(String param, Integer charType) {
         if (param == null || "".equals(param.trim())) {
             return "";
         }
