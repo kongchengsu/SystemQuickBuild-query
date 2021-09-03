@@ -263,17 +263,18 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
             }
         }
     }
+
     public JsonResult QueryJsonResult(ServiceImpl service, Class clasz) {
         JsonResult jsonResult = new JsonResult();
-        IPage<T> page = QueryPage(service,clasz);
-        if(verifyParamIsY(getIsExport())){
+        IPage<T> page = QueryPage(service, clasz);
+        if (verifyParamIsY(getIsExport())) {
             jsonResult.buildTrueNew();
             jsonResult.setTip(getExcelReturnPath());
-        }else {
+        } else {
             List records = EntityUtil.parentListToChildList(page.getRecords(), clasz);
-            if(ListUtil.isNotEmpty(records)){
-                jsonResult.buildTrueNew(page.getTotal(),records);
-            }else {
+            if (ListUtil.isNotEmpty(records)) {
+                jsonResult.buildTrueNew(page.getTotal(), records);
+            } else {
                 jsonResult.buildFalseNew(RequestEnum.REQUEST_ERROR_DATABASE_QUERY_NO_DATA);
             }
         }
@@ -440,7 +441,13 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
         if (getParam() != null) {
             Field[] fields = clazz.getDeclaredFields();
             for (Field field : fields) {
-                QueryTypeEnum.EQ.buildQuery(field, getParam(), query, update);
+                try {
+                    if (!"serialVersionUID".equals(field.getName())
+                            && StringUtil.isNotEmpty(clazz.getMethod("get" + QueryTypeEnum.upperFirstLatter(field.getName())).invoke(getParam()) != null))
+                        QueryTypeEnum.EQ.buildQuery(field, getParam(), query, update);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
         // 然后根据本身的JoinExample注解，将对应的项，做成查询参数
