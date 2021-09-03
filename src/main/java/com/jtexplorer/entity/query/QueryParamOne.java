@@ -249,6 +249,7 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
                 });
             } catch (Exception e) {
                 e.printStackTrace();
+                return null;
             }
             return new Page<>();
         } else {
@@ -267,6 +268,10 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
     public JsonResult QueryJsonResult(ServiceImpl service, Class clasz) {
         JsonResult jsonResult = new JsonResult();
         IPage<T> page = QueryPage(service, clasz);
+        if(page == null){
+            jsonResult.buildFalseNew(RequestEnum.REQUEST_ERROR_SYSTEM_ERROR);
+            return jsonResult;
+        }
         if (verifyParamIsY(getIsExport())) {
             jsonResult.buildTrueNew();
             jsonResult.setTip(getExcelReturnPath());
