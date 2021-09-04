@@ -7,7 +7,13 @@ import com.jtexplorer.util.StringUtil;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
-
+/**
+ * sql查询参数查询类型枚举
+ * 用于在JoinExample注解中使用
+ *
+ * @author 苏友朋
+ * @date 2019/06/24 09:41
+ */
 public enum QueryTypeEnum {
     EQ((f, c, o, q, u) -> {
         Object fieldValue = getFieldValue(o, f);
@@ -61,6 +67,9 @@ public enum QueryTypeEnum {
         }
     });
 
+    /**
+     * 参数构建逻辑
+     */
     private QueryTypeConsumer<Field, String, Object, QueryWrapper, UpdateWrapper> action;
 
     QueryTypeEnum(QueryTypeConsumer<Field, String, Object, QueryWrapper, UpdateWrapper> action) {
@@ -71,6 +80,10 @@ public enum QueryTypeEnum {
         return action;
     }
 
+    /**
+     * 根据对象，对象所属类的属性，获取对象对应属性的值
+     * 使用拼接的get方法获取
+     */
     private static Object getFieldValue(Object o, Field f) {
         try {
             return o.getClass().getMethod("get" + upperFirstLatter(f.getName())).invoke(o);
@@ -80,11 +93,17 @@ public enum QueryTypeEnum {
         }
     }
 
+    /**
+     * 构建查询条件，使用属性名转下划线作为列名
+     */
     public void buildQuery(Field field, Object o,
                            QueryWrapper query, UpdateWrapper update) {
-        this.action.accept(field, camelToUnderline(field.getName(), 1), o, query, update);
+        buildQuery(field,o,field.getName(),query,update);
     }
 
+    /**
+     * 构建查询条件
+     */
     public void buildQuery(Field field, Object o, String columnName,
                            QueryWrapper query, UpdateWrapper update) {
         this.action.accept(field, camelToUnderline(columnName,1), o, query, update);
@@ -92,7 +111,9 @@ public enum QueryTypeEnum {
 
     private static final char UNDERLINE = '_';
 
-    /*驼峰转下划线*/
+    /**
+     * 驼峰转下划线
+     */
     public static String camelToUnderline(String param, Integer charType) {
         if (param == null || "".equals(param.trim())) {
             return "";
