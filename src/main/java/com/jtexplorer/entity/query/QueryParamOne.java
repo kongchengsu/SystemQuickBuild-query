@@ -13,6 +13,8 @@ import com.jtexplorer.entity.enums.RequestEnum;
 import com.jtexplorer.util.*;
 import lombok.Data;
 import org.apache.ibatis.session.RowBounds;
+import org.apache.poi.util.DefaultTempFileCreationStrategy;
+import org.apache.poi.util.TempFile;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -111,6 +113,7 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
      * 导入excel文件，目前还没有开发完毕，接下来会加入导入文件的处理逻辑
      */
     File fileExcel;
+    private File tempDir;
     /**
      * sql关键字，用于orderItem和groupItem的关键字过滤
      */
@@ -315,6 +318,14 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
                 e.printStackTrace();
                 // 出现异常时，返回null
                 return null;
+            }finally {
+                // 删除临时文件夹下的全部文件
+                File[] tempFiles = getTempDir().listFiles();
+                for (File tempFile : tempFiles) {
+                    if (tempFile.isFile()) {
+                        tempFile.delete();
+                    }
+                }
             }
             return new Page<>();
         } else {
@@ -457,7 +468,7 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
         StringBuilder exportPathTemp = new StringBuilder();
         StringBuilder returnPath = new StringBuilder();
         exportPath.append(webappPath).append(savePath);
-        exportPathTemp.append(webappPath).append(savePath);
+        exportPathTemp.append(webappPath).append("/upload/").append("poiFiles");
         returnPath.append("/").append(savePath);
         if (!new File(exportPath.toString()).exists()) {
             //创建目录
@@ -466,11 +477,16 @@ public abstract class QueryParamOne<Q extends QueryParamOne, T> {
             }
         }
         exportPath.append(System.currentTimeMillis()).append(".xlsx");
-        exportPathTemp.append(System.currentTimeMillis()).append("temp").append(".xlsx");
         returnPath.append(System.currentTimeMillis()).append(".xlsx");
         setExcelReturnPath(returnPath.toString());
         setExcelSavePath(exportPath.toString());
         setExcelSavePathTemp(exportPathTemp.toString());
+        // 临时文件设置
+        tempDir = new File(getExcelSavePathTemp());
+        if (!tempDir.exists()) {
+            tempDir.mkdirs();
+        }
+        TempFile.setTempFileCreationStrategy(new DefaultTempFileCreationStrategy(tempDir));
     }
 
     /**

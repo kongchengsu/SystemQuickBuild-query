@@ -24,5 +24,5 @@ public @interface JoinExample {
      * 条件查询列名，使用实体类中的属性名（会自动将驼峰转为下划线）即可（数据库列名也可以）
      * 默认like
      */
-    String columnName() default "";
+    String columnName();
 }
